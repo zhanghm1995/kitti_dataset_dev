@@ -1,9 +1,9 @@
 # 介绍
-本项目支持读取KITTI raw_data和odometry data，但其实从源码里看感觉好像也已经写了tracking数据集的读取，待测试。
+本项目是Python写的用来读取KITTI raw_data和odometry data数据，但其实从源码里看感觉好像也已经写了tracking数据集的读取，待测试。
 
 ## 安装
 
-两种安装方式：
+两种安装方式（不用安装也能直接在本地运行）：
 
 ### Using pip
 
@@ -43,6 +43,10 @@ drive = '0005'
 ```
 
 就可以直接运行了。
+
+```python
+python3 demos/demo_raw.py
+```
 
 ## 评价
 
