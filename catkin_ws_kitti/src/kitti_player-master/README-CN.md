@@ -4,6 +4,9 @@
 
 该ROS项目的主要目的是能够将KITTI raw_data数据以ROS中常用的消息类型以话题的形式发布出来。
 
+发布的话题类型包括：Color/Grayscale images, Velodyne scan as PCL, sensor_msgs/Imu Message, GPS as sensor_msgs/NavSatFix Message). 
+
+
 ## 节点和发布话题内容
 
 Node [/kitti_player]
@@ -93,7 +96,47 @@ Services:
 ```xml
 roslaunch kitti_player kittiplayer_standalone.launch
 ```
+```
+Allowed options:
+help           h    help message
+directory      d    *required* - path to the kitti dataset Directory
+frequency      f    set replay Frequency
+all            a    replay All data
+velodyne       v    replay Velodyne data
+gps            g    replay Gps data
+imu            i    replay Imu data
+grayscale      G    replay Stereo Grayscale images
+color          C    replay Stereo Color images
+viewer         V    enable image viewer
+timestamps     T    use KITTI timestamps
+stereoDisp     s    use pre-calculated disparities
+viewDisp       D    view loaded disparity images
+frame          F    start playing at frame...
+gpsPoints      p    publish GPS/RTK markers to RVIZ, having reference frame as <reference_frame> [example: -p map]
+synchMode      S    Enable Synch mode (wait for signal to load next frame [std_msgs/Bool "data: true"]
 
+kitti_player needs a directory tree like the following:
+└── 2011_09_26_drive_0001_sync
+    ├── image_00              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── image_01              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── image_02              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── image_03              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── oxts                  
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── velodyne_points       
+    │   └── data              
+    │     └ timestamps.txt    
+    └── calib_cam_to_cam.txt  
+```
 另：
 
 `my_kitti_player.cpp`为在原来`kitti_player.cpp`基础上修改的，主要是添加了点云往图像上投影的功能，运行命令为：
@@ -102,6 +145,49 @@ roslaunch kitti_player kittiplayer_standalone.launch
 roslaunch kitti_player my_kittiplayer_standalone.launch
 ```
 
+**参数含义：**
+
+```
+Allowed options:
+help           h    help message
+directory      d    *required* - path to the kitti dataset Directory
+frequency      f    set replay Frequency
+all            a    replay All data
+velodyne       v    replay Velodyne data
+gps            g    replay Gps data
+imu            i    replay Imu data
+grayscale      G    replay Stereo Grayscale images
+color          C    replay Stereo Color images
+viewer         V    enable image viewer
+timestamps     T    use KITTI timestamps
+stereoDisp     s    use pre-calculated disparities
+viewDisp       D    view loaded disparity images
+frame          F    start playing at frame...
+gpsPoints      p    publish GPS/RTK markers to RVIZ, having reference frame as <reference_frame> [example: -p map]
+synchMode      S    Enable Synch mode (wait for signal to load next frame [std_msgs/Bool "data: true"]
+
+kitti_player needs a directory tree like the following:
+└── 2011_09_26_drive_0001_sync
+    ├── image_00              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── image_01              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── image_02              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── image_03              
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── oxts                  
+    │   └── data              
+    │   └ timestamps.txt      
+    ├── velodyne_points       
+    │   └── data              
+    │     └ timestamps.txt    
+    └── calib_cam_to_cam.txt  
+```
 
 
 
