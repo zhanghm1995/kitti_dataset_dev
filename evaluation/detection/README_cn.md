@@ -6,13 +6,15 @@
 
 KITTI中对目标检测算法性能的评估通过绘制precision-recall曲线，并计算平均精度（AP）进行排名。
 
-该文件夹下面包含两个文件夹，其中`devit_object`是KITTI object官网上下载的用于object的测评，`kitti_eval-master`是Github上下载的代码，同样用于KITTI数据集测评，两者的区别在于，`kitti_eval-master`中还包含了`evaluate_object_3d_offline.cpp`可以用于离线测评KITTI数据集检测算法性能，意思是如果你把KITTI object数据集中的training一部分数据划分为test数据，就可以用这个代码自己测评得到结果，否则需要提交到KITTI数据集服务器上测评。
+该文件夹下面包含两个文件夹，其中`devit_object`是KITTI object官网上下载的用于object的测评，`kitti_eval-master`是Github上下载的代码，同样用于KITTI数据集测评，两者的区别在于，`kitti_eval-master`（来自https://github.com/prclibo/kitti_eval）中还包含了`evaluate_object_3d_offline.cpp`可以用于离线测评KITTI数据集检测算法性能，意思是如果你把KITTI object数据集中的training一部分数据划分为test数据，就可以用这个代码自己测评得到结果，否则你需要提交到KITTI数据集服务器上测评。
 
 
 
 ## 测评内容
 
 代码可以进行**2D Object Detection**、**Object Orientation**和**3D Object Detection**测评，取决于给出的检测结果txt文件中各项取值是否有效。
+
+[测评代码解读](https://blog.csdn.net/shuqiaos/article/details/82770370)
 
 ## 测评步骤
 
