@@ -1120,18 +1120,19 @@ int main(int argc, char **argv)
             }
         }
 
-        pcl::PointCloud<pcl::PointXYZI>::Ptr points_pub;
+
         //publish velodyne lidar point cloud
+        pcl::PointCloud<pcl::PointXYZI>::Ptr points_pub;
+        
         if (options.velodyne || options.all_data)
         {
             header_support.stamp = current_timestamp;
             full_filename_velodyne = dir_velodyne_points + sequence_num +"/" + boost::str(boost::format("%06d") % entries_played ) + ".bin";
 
-            if (!options.timestamps)
+            // if (!options.timestamps)
               points_pub = publish_velodyne(map_pub, full_filename_velodyne, &header_support);
             double points_pub_timestamp = header_support.stamp.toSec();
         }
-
 
         // Get gps and imu data lines
         static std::vector<std::string> lines; // every element represent a single line, don't change
