@@ -167,7 +167,7 @@ void synchCallback(const std_msgs::Bool::ConstPtr& msg)
 }
 
 /**
- * @brief publish_velodyne
+ * @brief Publish velodyne point cloud
  * @param pub The ROS publisher as reference
  * @param infile file with data to publish
  * @param header Header to use to publish the message
@@ -183,7 +183,7 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr publish_velodyne(ros::Publisher &pub, strin
     }
     else
     {
-        ROS_DEBUG_STREAM ("reading " << infile);
+        ROS_INFO_STREAM ("reading point cloud from " << infile);
         input.seekg(0, ios::beg);
 
         pcl::PointCloud<pcl::PointXYZI>::Ptr points (new pcl::PointCloud<pcl::PointXYZI>);
@@ -807,7 +807,7 @@ int main(int argc, char **argv)
 
     cv_bridge::CvImage cv_bridge_img;
 
-    ros::Publisher map_pub           = node.advertise<pcl::PointCloud<pcl::PointXYZ> >  ("velo/pointcloud", 1, true);
+    ros::Publisher velo_cloud_pub           = node.advertise<pcl::PointCloud<pcl::PointXYZ> >  ("velo/pointcloud", 1, true);
     ros::Publisher gps_pub           = node.advertise<sensor_msgs::NavSatFix>           ("oxts/gps", 1, true);
     ros::Publisher gps_pub_initial   = node.advertise<sensor_msgs::NavSatFix>           ("oxts/gps_initial", 1, true);
     ros::Publisher imu_pub           = node.advertise<sensor_msgs::Imu>                 ("oxts/imu", 1, true);
@@ -1121,16 +1121,15 @@ int main(int argc, char **argv)
         }
 
 
-        //publish velodyne lidar point cloud
+        // Publish velodyne lidar point cloud
         pcl::PointCloud<pcl::PointXYZI>::Ptr points_pub;
-        
         if (options.velodyne || options.all_data)
         {
             header_support.stamp = current_timestamp;
             full_filename_velodyne = dir_velodyne_points + sequence_num +"/" + boost::str(boost::format("%06d") % entries_played ) + ".bin";
 
             // if (!options.timestamps)
-              points_pub = publish_velodyne(map_pub, full_filename_velodyne, &header_support);
+              points_pub = publish_velodyne(velo_cloud_pub, full_filename_velodyne, &header_support);
             double points_pub_timestamp = header_support.stamp.toSec();
         }
 
