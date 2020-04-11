@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 21:15:44
- * @LastEditTime: 2020-04-09 22:47:43
+ * @LastEditTime: 2020-04-11 09:22:58
  * @Description:
  * @References: 
  */
@@ -53,6 +53,7 @@
 #include "iv_dynamicobject_msgs/ObjectArray.h"
 #include "kitti-devkit-raw/tracklets.h"
 #include "kitti_track_label.h"
+#include "kitti_utils.h"
 
 using namespace std;
 using namespace pcl;
@@ -683,7 +684,20 @@ int main(int argc, char** argv) {
   po::variables_map vm;
 
   po::options_description desc("Kitti_player, a player for KITTI raw datasets\nDatasets can be downloaded from: http://www.cvlibs.net/datasets/kitti/raw_data.php\n\nAllowed options", 200);
-  desc.add_options()("help,h", "help message")("directory ,d", po::value<string>(&options.path)->required(), "*required* - path to the kitti dataset Directory")("sequence  ,s", po::value<string>(&sequence_num)->required(), "*required* - want to handle which sequnce, e.g. 0000")("frequency ,f", po::value<float>(&options.frequency)->default_value(1.0), "set replay Frequency")("all       ,a", po::value<bool>(&options.all_data)->default_value(0)->implicit_value(1), "replay All data")("velodyne  ,v", po::value<bool>(&options.velodyne)->default_value(0)->implicit_value(1), "replay Velodyne data")("gps       ,g", po::value<bool>(&options.gps)->default_value(0)->implicit_value(1), "replay Gps data")("imu       ,i", po::value<bool>(&options.imu)->default_value(0)->implicit_value(1), "replay Imu data")("color     ,C", po::value<bool>(&options.color)->default_value(0)->implicit_value(1), "replay Stereo Color images")("viewer    ,V", po::value<bool>(&options.viewer)->default_value(0)->implicit_value(1), "enable image viewer")("frame     ,F", po::value<unsigned int>(&options.startFrame)->default_value(0)->implicit_value(0), "start playing at frame...")("gpsPoints ,p", po::value<string>(&options.gpsReferenceFrame)->default_value(""), "publish GPS/RTK markers to RVIZ, having reference frame as <reference_frame> [example: -p map]")("synchMode ,S", po::value<bool>(&options.synchMode)->default_value(0)->implicit_value(1), "Enable Synch mode (wait for signal to load next frame [std_msgs/Bool data: true]");
+  desc.add_options()
+  ("help,h", "help message")
+  ("directory ,d", po::value<string>(&options.path)->required(), "*required* - path to the kitti dataset Directory")
+  ("sequence  ,s", po::value<string>(&sequence_num)->required(), "*required* - want to handle which sequnce, e.g. 0000")
+  ("frequency ,f", po::value<float>(&options.frequency)->default_value(1.0), "set replay Frequency")
+  ("all       ,a", po::value<bool>(&options.all_data)->default_value(0)->implicit_value(1), "replay All data")
+  ("velodyne  ,v", po::value<bool>(&options.velodyne)->default_value(0)->implicit_value(1), "replay Velodyne data")
+  ("gps       ,g", po::value<bool>(&options.gps)->default_value(0)->implicit_value(1), "replay Gps data")
+  ("imu       ,i", po::value<bool>(&options.imu)->default_value(0)->implicit_value(1), "replay Imu data")
+  ("color     ,C", po::value<bool>(&options.color)->default_value(0)->implicit_value(1), "replay Stereo Color images")
+  ("viewer    ,V", po::value<bool>(&options.viewer)->default_value(0)->implicit_value(1), "enable image viewer")
+  ("frame     ,F", po::value<unsigned int>(&options.startFrame)->default_value(0)->implicit_value(0), "start playing at frame...")
+  ("gpsPoints ,p", po::value<string>(&options.gpsReferenceFrame)->default_value(""), "publish GPS/RTK markers to RVIZ, having reference frame as <reference_frame> [example: -p map]")
+  ("synchMode ,S", po::value<bool>(&options.synchMode)->default_value(0)->implicit_value(1), "Enable Synch mode (wait for signal to load next frame [std_msgs/Bool data: true]");
 
   try  // parse options
   {
@@ -711,7 +725,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  ros::init(argc, argv, "kitti_player");
+  ros::init(argc, argv, "kitti_tracking_player");
   ros::NodeHandle node("kitti");
   ros::Rate loop_rate(options.frequency);
 
@@ -721,6 +735,7 @@ int main(int argc, char** argv) {
   else
     std::cout << "Error while setting the logger level!" << std::endl;
 
+  /// Define variable sto store the files path
   DIR* dir;
   struct dirent* ent;
   unsigned int total_entries = 0;   //number of elements to be played
@@ -745,18 +760,16 @@ int main(int argc, char** argv) {
   std_msgs::Header header_support;
   KittiTrackLabel* kitti_track_label;
 
-  image_transport::ImageTransport it(node);
-  image_transport::CameraPublisher pub02 = it.advertiseCamera("camera_color_left/image_raw", 1);
-
   sensor_msgs::Image ros_msg02;
   sensor_msgs::Image ros_msg03;
-
   //    sensor_msgs::CameraInfo ros_cameraInfoMsg;
   sensor_msgs::CameraInfo ros_cameraInfoMsg_camera02;
   sensor_msgs::CameraInfo ros_cameraInfoMsg_camera03;
-
   cv_bridge::CvImage cv_bridge_img;
 
+  /// Define the ROS publishers
+  image_transport::ImageTransport it(node);
+  image_transport::CameraPublisher pub02 = it.advertiseCamera("camera_color_left/image_raw", 1);
   ros::Publisher velo_cloud_pub = node.advertise<pcl::PointCloud<pcl::PointXYZ> >("velo/pointcloud", 1, true);
   ros::Publisher gps_pub = node.advertise<sensor_msgs::NavSatFix>("oxts/gps", 1, true);
   ros::Publisher gps_pub_initial = node.advertise<sensor_msgs::NavSatFix>("oxts/gps_initial", 1, true);
@@ -811,8 +824,7 @@ int main(int argc, char** argv) {
   (*(options.path.end() - 1) != '/' ? dir_velodyne_points = options.path + "/velodyne/" : dir_velodyne_points = options.path + "velodyne/");
 
   // Check all the directories
-  if (
-      (options.all_data && ((opendir(dir_image02.c_str()) == NULL) ||
+  if ((options.all_data && ((opendir(dir_image02.c_str()) == NULL) ||
                             (opendir(dir_oxts.c_str()) == NULL) ||
                             (opendir(dir_label02.c_str()) == NULL) ||
                             (opendir(dir_calib.c_str()) == NULL) ||
@@ -834,15 +846,16 @@ int main(int argc, char** argv) {
   string filename_image02 = dir_image02 + sequence_num + "/";
   if (options.all_data)  //if replay all data in data folders
   {
-    dir = opendir(filename_image02.c_str());
-    while ((ent = readdir(dir))) {
-      //skip . & ..
-      len = strlen(ent->d_name);
-      //skip . & ..
-      if (len > 2)
-        total_entries++;
-    }
-    closedir(dir);
+    // dir = opendir(filename_image02.c_str());
+    // while ((ent = readdir(dir))) {
+    //   //skip . & ..
+    //   len = strlen(ent->d_name);
+    //   //skip . & ..
+    //   if (len > 2)
+    //     total_entries++;
+    // }
+    // closedir(dir);
+    total_entries = kitti_utils::ListFilesInDirectory(filename_image02);
   } else {
     bool done = false;
     if (!done && options.color) {
