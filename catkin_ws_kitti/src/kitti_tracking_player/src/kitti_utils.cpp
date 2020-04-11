@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 22:37:19
- * @LastEditTime: 2020-04-11 15:12:25
+ * @LastEditTime: 2020-04-11 16:10:18
  * @Description: Some utilities function and classes for loading and parsing KITTI dataset
  * @References: 
  */
@@ -15,7 +15,12 @@
 
 namespace kitti_utils {
 
+using std::cout;
+using std::endl;
+
 Calibration::Calibration(const std::string& calib_file_path) {
+  LoadFile2Map(calib_file_path);
+  
 	auto P2_temp = calib_params_["P2:"];
 	P2_ = Eigen::Map<const Eigen::Matrix<float, 3, 4, Eigen::RowMajor> >(P2_temp.data());
 
@@ -23,7 +28,11 @@ Calibration::Calibration(const std::string& calib_file_path) {
 	R_Rect_0_ = Eigen::Map<const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> >(R0_Rect_temp.data());
 
 	auto Velo2Cam_temp = calib_params_["Tr_velo_cam"];
-	Velo2Cam_ = Eigen::Map<const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> >(Velo2Cam_temp.data());
+	Velo2Cam_ = Eigen::Map<const Eigen::Matrix<float, 3, 4, Eigen::RowMajor> >(Velo2Cam_temp.data());
+
+  cout<<"P2 = "<<P2_<<endl;
+  cout<<"R_Rect_0 = "<<R_Rect_0_<<endl;
+  cout<<"Velo2Cam = "<<Velo2Cam_<<endl;
 }
 	
 void Calibration::LoadFile2Map(const std::string& calib_file_path) {
@@ -34,7 +43,6 @@ void Calibration::LoadFile2Map(const std::string& calib_file_path) {
 
   std::string line;
   while (std::getline(file, line)) {
-    std::cout << line << std::endl;
     std::vector<std::string> line_content;
     Split(rtrim(line), line_content, " ");
     std::vector<std::string> calib_param_string(line_content.begin() + 1, line_content.end());
@@ -74,6 +82,15 @@ Eigen::MatrixXf Calibration::ProjectRect2Image(const Eigen::MatrixXf& pts_3d_rec
   Eigen::MatrixXf pts_image = P2_ * pts_3d_homo;
   pts_image.array().rowwise() /= pts_image.row(2).array();
   return pts_image.topRows(2);
+}
+
+Eigen::MatrixXf Calibration::GetVelo2ImageMatrix() const {
+  Eigen::MatrixXf temp1  = R_Rect_0_ * Velo2Cam_;
+  Eigen::Matrix4f temp2 = Eigen::Matrix4f::Zero();
+  temp2(3, 3) = 1.0;
+  temp2.topLeftCorner(3, 4) = temp1;
+  Eigen::MatrixXf ret = P2_ * temp2;
+  return ret;
 }
 
 }  // namespace kitti_utils

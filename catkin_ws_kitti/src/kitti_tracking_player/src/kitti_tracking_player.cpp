@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 21:15:44
- * @LastEditTime: 2020-04-11 11:39:31
+ * @LastEditTime: 2020-04-11 16:11:12
  * @Description:
  * @References: 
  */
@@ -66,7 +66,8 @@ static Eigen::Matrix4f RT_velo_to_cam;
 static Eigen::Matrix4f transform_needed;
 static Eigen::Matrix4f R_rect_00;
 static Eigen::MatrixXf project_matrix(3, 4);
-Eigen::MatrixXf transform_matrix(3, 4);
+
+kitti_utils::Calibration calib_params;
 
 template <class PointT>
 bool projectPoint2Image(const PointT& pointIn, const Eigen::MatrixXf& projectmatrix, cv::Point2f& point_project) {
@@ -191,79 +192,6 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr publish_velodyne(ros::Publisher& pub, strin
   }
 }
 
-int getCalibration(string full_filename_calibration) {
-  ifstream file_c2c(full_filename_calibration.c_str());
-  if (!file_c2c.is_open())
-    return false;
-
-  ROS_INFO_STREAM("Reading calibration from " << full_filename_calibration);
-
-  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-  boost::char_separator<char> sep{" "};
-
-  string line = "";
-  unsigned char index = 0;
-  tokenizer::iterator token_iterator;
-
-  double P2[12], R_rect[12], Tr_velo_cam[12];
-  while (getline(file_c2c, line)) {
-    // Parse string phase 1, tokenize it using Boost.
-    tokenizer tok(line, sep);
-
-    // Move the iterator at the beginning of the tokenize vector and check for K/D/R/P matrices.
-    token_iterator = tok.begin();
-    if (strcmp((*token_iterator).c_str(), ((string)(string("P2:"))).c_str()) == 0)  //Calibration Matrix
-    {
-      index = 0;  //should be 12 at the end
-      for (token_iterator++; token_iterator != tok.end(); token_iterator++) {
-        //std::cout << *token_iterator << '\n';
-        P2[index++] = boost::lexical_cast<double>(*token_iterator);
-      }
-    }
-
-    token_iterator = tok.begin();
-    if (strcmp((*token_iterator).c_str(), ((string)(string("R_rect"))).c_str()) == 0)  //Rectification Matrix
-    {
-      index = 0;  //should be 12 at the end
-      for (token_iterator++; token_iterator != tok.end(); token_iterator++) {
-        //std::cout << *token_iterator << '\n';
-        R_rect[index++] = boost::lexical_cast<double>(*token_iterator);
-      }
-    }
-
-    token_iterator = tok.begin();
-    if (strcmp((*token_iterator).c_str(), ((string)(string("Tr_velo_cam"))).c_str()) == 0)  //Projection Matrix Rectified
-    {
-      index = 0;  //should be 12 at the end
-      for (token_iterator++; token_iterator != tok.end(); token_iterator++) {
-        //std::cout << *token_iterator << '\n';
-        Tr_velo_cam[index++] = boost::lexical_cast<double>(*token_iterator);
-      }
-    }
-  }
-
-  project_matrix << P2[0], P2[1], P2[2], P2[3],
-      P2[4], P2[5], P2[6], P2[7],
-      P2[8], P2[9], P2[10], P2[11];
-  R_rect_00 << R_rect[0], R_rect[1], R_rect[2], 0.0,
-      R_rect[3], R_rect[4], R_rect[5], 0.0,
-      R_rect[6], R_rect[7], R_rect[8], 0.0,
-      0.0, 0.0, 0.0, 1.0;
-  RT_velo_to_cam << Tr_velo_cam[0], Tr_velo_cam[1], Tr_velo_cam[2], Tr_velo_cam[3],
-      Tr_velo_cam[4], Tr_velo_cam[5], Tr_velo_cam[6], Tr_velo_cam[7],
-      Tr_velo_cam[8], Tr_velo_cam[9], Tr_velo_cam[10], Tr_velo_cam[11],
-      0.0, 0.0, 0.0, 1.0;
-
-  cout << "projection_matrix" << endl
-       << project_matrix << endl;
-  cout << "R_rect_00_matrix" << endl
-       << R_rect_00 << endl;
-  cout << "RT_velo_to_cam_matrix" << endl
-       << RT_velo_to_cam << endl;
-  ROS_INFO_STREAM("... ok");
-  return true;
-}
-
 void drawBBoxes(cv::Mat& img, const std::vector<ObjectDetect>& outRcs) {
   // draw detection results
   for (const auto& rect : outRcs) {
@@ -284,7 +212,8 @@ void drawBBoxes(cv::Mat& img, const std::vector<ObjectDetect>& outRcs) {
 }
 
 void showProjection(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, const cv::Mat& image) {
-  transform_matrix = project_matrix * R_rect_00 * RT_velo_to_cam;
+  Eigen::MatrixXf transform_matrix = calib_params.GetVelo2ImageMatrix();
+  cout<<"transform_matrix = "<<transform_matrix<<endl;
 
   //        points_pub = TransformKittiCloud(points_pub, true, 1.73);
   cv::Mat img_fusion_result = ProjectCloud2Image(cloud, image, transform_matrix);
@@ -643,6 +572,7 @@ void showBoundingBox(ros::Publisher& pub, const int frame_index,
  * Datasets can be downloaded from: http://www.cvlibs.net/datasets/kitti/raw_data.php
  */
 int main(int argc, char** argv) {
+
   RT_velo_to_cam << 7.533745e-03, -9.999714e-01, -6.166020e-04, -4.069766e-03,
       1.480249e-02, 7.280733e-04, -9.998902e-01, -7.631618e-02,
       9.998621e-01, 7.523790e-03, 1.480755e-02, -2.717806e-01,
@@ -936,11 +866,7 @@ int main(int argc, char** argv) {
 
   // Load calibration matrix anyway
   full_filename_calibration = dir_calib + sequence_num + ".txt";
-  if (!getCalibration(full_filename_calibration)) {
-    ROS_ERROR_STREAM("Error reading  calibration");
-    node.shutdown();
-    return -1;
-  }
+  calib_params = kitti_utils::Calibration(full_filename_calibration);
 
   /******************************************************************************
  *  This is the main Loop

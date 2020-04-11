@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 22:36:20
- * @LastEditTime: 2020-04-11 14:55:23
+ * @LastEditTime: 2020-04-11 16:13:46
  * @Description: Some utilities function and classes for loading and parsing KITTI dataset
  * @References: 
  */
@@ -70,11 +70,31 @@ inline bool ReadVeloPoints(const std::string& velo_bin_path, KittiPointCloud& po
   }
 }
 
+/**
+ * @brief KITTI Tracking dataset calibration parameters manage class
+ */ 
 class Calibration {
 public:
   typedef std::map<std::string, std::vector<float> > FileContentMap;
+
+  Calibration() = default;
+  
   Calibration(const std::string& calib_file_path);
 
+  Eigen::MatrixXf R_Rect_0() const { return R_Rect_0_; }
+
+  Eigen::MatrixXf P2() const { return P2_; }
+
+  Eigen::MatrixXf Velo2Cam() const { return Velo2Cam_; }
+
+  /**
+   * @brief Get the 3x4 from 3d velodyne coordinate to 2d image coodinates transformation matrix
+   */ 
+  Eigen::MatrixXf GetVelo2ImageMatrix() const;
+
+  /**
+   * @brief From cartesian coordinate to homogenous coordinate, that's add 1 in the end
+   */ 
   static Eigen::MatrixXf Cartesian2Homogenous(const Eigen::MatrixXf& pts_3d);
 
   /// 3d to 3d
