@@ -46,9 +46,7 @@ limitations under the License.
  */
 class KittiConfig
 {
-
 public:
-
     static boost::filesystem::path getPointCloudPath(int dataset);
     static boost::filesystem::path getPointCloudPath(int dataset,int frameId);
     static boost::filesystem::path getTrackletsPath(int dataset);
@@ -59,8 +57,6 @@ public:
     static int getDatasetIndex(int number);
 
 private:
-
-
     // Following variables describe the filesystem hierarchy of the KITTI dataset
     static std::string data_directory;
     static std::string raw_data_directory;

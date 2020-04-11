@@ -35,11 +35,12 @@ typedef pcl::PointXYZI KittiPoint;
 typedef pcl::PointCloud<KittiPoint> KittiPointCloud;
 typedef Tracklets::tTracklet KittiTracklet;
 
+/**
+ * @brief Class used to 
+ */
 class KittiDataset
 {
-
 public:
-
     KittiDataset();
     KittiDataset(int dataset);
     int getNumberOfFrames();
@@ -53,7 +54,6 @@ public:
     static std::string getLabelString(int label);
 
 private:
-
     int _dataset;
     int _number_of_frames;
     /** Counts the number of files with an ".bin" extension in the point cloud path */

@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 22:36:20
- * @LastEditTime: 2020-04-11 09:22:37
+ * @LastEditTime: 2020-04-11 11:36:38
  * @Description: Some utilities function and classes for loading and parsing KITTI dataset
  * @References: 
  */
@@ -10,6 +10,7 @@
 
 // C++
 #include <string>
+#include <fstream>
 #include <map>
 #include <dirent.h>
 // PCL
@@ -46,6 +47,25 @@ inline int ListFilesInDirectory(const std::string& dir_name) {
     return -1;
   }
   return total_files;
+}
+
+inline bool ReadVeloPoints(const std::string& velo_bin_path, KittiPointCloud& point_cloud) {
+  std::fstream input(velo_bin_path.c_str(), std::ios::in | std::ios::binary);
+  if (!input.good()) {
+    std::cout<<"[ReadVeloPoints] Could not read file: "<<velo_bin_path<<std::endl;
+    return false;
+  } else {
+    input.seekg(0, std::ios::beg);
+    int i;
+    for (i = 0; input.good() && !input.eof(); i++) {
+      KittiPoint point;
+      input.read((char*)&point.x, 3 * sizeof(float));
+      input.read((char*)&point.intensity, sizeof(float));
+      point_cloud.push_back(point);
+    }
+    input.close();
+    return true;
+  }
 }
 
 class Calibration {

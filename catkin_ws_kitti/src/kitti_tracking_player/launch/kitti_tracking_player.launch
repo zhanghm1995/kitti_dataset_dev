@@ -8,7 +8,7 @@
 
     <node   name="kitti_tracking_player" pkg="kitti_tracking_player" type="kitti_tracking_player"
             required="true"
-           args= "-d $(arg directory) -s 0000 -f 3 -a 1 -V 1"
+           args= "-d $(arg directory) -s 0000 -f 10 -a 1 -V 1"
  
             output="screen"
             />

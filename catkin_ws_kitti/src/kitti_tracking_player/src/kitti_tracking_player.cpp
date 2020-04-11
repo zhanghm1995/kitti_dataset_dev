@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 21:15:44
- * @LastEditTime: 2020-04-11 09:22:58
+ * @LastEditTime: 2020-04-11 11:35:52
  * @Description:
  * @References: 
  */
@@ -175,33 +175,18 @@ void synchCallback(const std_msgs::Bool::ConstPtr& msg) {
  * @return 1 if file is correctly readed, 0 otherwise
  */
 pcl::PointCloud<pcl::PointXYZI>::Ptr publish_velodyne(ros::Publisher& pub, string infile, std_msgs::Header* header) {
-  fstream input(infile.c_str(), ios::in | ios::binary);
-  if (!input.good()) {
+  KittiPointCloudPtr points(new KittiPointCloud);
+  if (!kitti_utils::ReadVeloPoints(infile, *points)) {
     ROS_ERROR_STREAM("Could not read file: " << infile);
-    return 0;
+    return nullptr;
   } else {
-    ROS_INFO_STREAM("reading point cloud from " << infile);
-    input.seekg(0, ios::beg);
-
-    pcl::PointCloud<pcl::PointXYZI>::Ptr points(new pcl::PointCloud<pcl::PointXYZI>);
-
-    int i;
-    for (i = 0; input.good() && !input.eof(); i++) {
-      pcl::PointXYZI point;
-      input.read((char*)&point.x, 3 * sizeof(float));
-      input.read((char*)&point.intensity, sizeof(float));
-      points->push_back(point);
-    }
-    input.close();
-
-    //workaround for the PCL headers... http://wiki.ros.org/hydro/Migration#PCL
+  //workaround for the PCL headers... http://wiki.ros.org/hydro/Migration#PCL
     sensor_msgs::PointCloud2 pc2;
 
     pc2.header.frame_id = "velo_link";  //ros::this_node::getName();
     pc2.header.stamp = header->stamp;
     points->header = pcl_conversions::toPCL(pc2.header);
     pub.publish(points);
-
     return points;
   }
 }
@@ -846,15 +831,6 @@ int main(int argc, char** argv) {
   string filename_image02 = dir_image02 + sequence_num + "/";
   if (options.all_data)  //if replay all data in data folders
   {
-    // dir = opendir(filename_image02.c_str());
-    // while ((ent = readdir(dir))) {
-    //   //skip . & ..
-    //   len = strlen(ent->d_name);
-    //   //skip . & ..
-    //   if (len > 2)
-    //     total_entries++;
-    // }
-    // closedir(dir);
     total_entries = kitti_utils::ListFilesInDirectory(filename_image02);
   } else {
     bool done = false;
@@ -1019,7 +995,7 @@ int main(int argc, char** argv) {
 
       cv_bridge_img.encoding = sensor_msgs::image_encodings::BGR8;
       cv_bridge_img.header.frame_id = ros::this_node::getName();
-      //first handle 02 color camera image
+      // first handle 02 color camera image
       if (!options.timestamps) {
         cv_bridge_img.header.stamp = current_timestamp;
         ros_msg02.header.stamp = ros_cameraInfoMsg_camera02.header.stamp = cv_bridge_img.header.stamp;
