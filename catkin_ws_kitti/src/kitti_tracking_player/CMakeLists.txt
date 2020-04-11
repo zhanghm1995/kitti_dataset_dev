@@ -28,7 +28,7 @@ catkin_package(
 )
 
 include_directories(
-		SYSTEM  src include 
+		SYSTEM  src include
 		${catkin_INCLUDE_DIRS}
   		${PCL_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
@@ -39,6 +39,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_executable(kitti_tracking_player src/kitti_tracking_player.cpp 
+                  src/kitti_utils.cpp
 									 src/kitti_track_label.cpp
 									 src/KittiConfig.cpp
 									 src/KittiDataset.cpp)
