@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 21:15:44
- * @LastEditTime: 2020-04-11 16:11:12
+ * @LastEditTime: 2020-04-11 16:15:02
  * @Description:
  * @References: 
  */
@@ -61,11 +61,6 @@ using namespace ros;
 using namespace tf;
 
 namespace po = boost::program_options;
-
-static Eigen::Matrix4f RT_velo_to_cam;
-static Eigen::Matrix4f transform_needed;
-static Eigen::Matrix4f R_rect_00;
-static Eigen::MatrixXf project_matrix(3, 4);
 
 kitti_utils::Calibration calib_params;
 
@@ -572,23 +567,6 @@ void showBoundingBox(ros::Publisher& pub, const int frame_index,
  * Datasets can be downloaded from: http://www.cvlibs.net/datasets/kitti/raw_data.php
  */
 int main(int argc, char** argv) {
-
-  RT_velo_to_cam << 7.533745e-03, -9.999714e-01, -6.166020e-04, -4.069766e-03,
-      1.480249e-02, 7.280733e-04, -9.998902e-01, -7.631618e-02,
-      9.998621e-01, 7.523790e-03, 1.480755e-02, -2.717806e-01,
-      0.0, 0.0, 0.0, 1.0;
-  transform_needed << 0.0, 1.0, 0.0, 0.0,
-      -1.0, 0.0, 0.0, 0.0,
-      0.0, 0.0, 1.0, -1.73,
-      0.0, 0.0, 0.0, 1.0;
-  R_rect_00 << 9.999239e-01, 9.837760e-03, -7.445048e-03, 0.0,
-      -9.869795e-03, 9.999421e-01, -4.278459e-03, 0.0,
-      7.402527e-03, 4.351614e-03, 9.999631e-01, 0.0,
-      0.0, 0.0, 0.0, 1.0;
-  project_matrix << 7.215377e+02, 0.000000e+00, 6.095593e+02, 4.485728e+01,
-      0.000000e+00, 7.215377e+02, 1.728540e+02, 2.163791e-01,
-      0.000000e+00, 0.000000e+00, 1.000000e+00, 2.745884e-03;
-
   int dataset_index = 5;
   KittiDataset* dataset;
   // Init the viewer with the first point cloud and corresponding tracklets
