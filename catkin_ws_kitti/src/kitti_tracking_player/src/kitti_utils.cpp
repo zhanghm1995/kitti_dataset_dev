@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 22:37:19
- * @LastEditTime: 2020-04-11 08:15:46
+ * @LastEditTime: 2020-04-11 15:12:25
  * @Description: Some utilities function and classes for loading and parsing KITTI dataset
  * @References: 
  */
@@ -42,6 +42,38 @@ void Calibration::LoadFile2Map(const std::string& calib_file_path) {
     std::transform(calib_param_string.begin(), calib_param_string.end(), calib_param.begin(), [](const std::string& val) { return std::atof(val.c_str()); });
     calib_params_[line_content[0]] = calib_param;
   }
+}
+
+Eigen::MatrixXf Calibration::Cartesian2Homogenous(const Eigen::MatrixXf& pts_3d) {
+  if (pts_3d.size() == 4) {
+    return pts_3d;
+  }
+  Eigen::MatrixXf temp = Eigen::MatrixXf::Ones(1, pts_3d.cols());
+  Eigen::MatrixXf ret;
+  ret << pts_3d,
+               temp;
+  return ret;
+}
+
+Eigen::MatrixXf Calibration::ProjectVelo2Ref(const Eigen::MatrixXf& pts_3d_velo) {
+  Eigen::MatrixXf pts_3d_homo = Cartesian2Homogenous(pts_3d_velo);
+  return Velo2Cam_ * pts_3d_homo;
+}
+  
+Eigen::MatrixXf Calibration::ProjectRef2Rect(const Eigen::MatrixXf& pts_3d_ref) {
+  return R_Rect_0_ * pts_3d_ref;
+}
+
+Eigen::MatrixXf Calibration::ProjectVelo2Rect(const Eigen::MatrixXf& pts_3d_velo) {
+  Eigen::MatrixXf velo_pts_in_ref = ProjectVelo2Ref(pts_3d_velo);
+  return ProjectRef2Rect(velo_pts_in_ref);
+}
+
+Eigen::MatrixXf Calibration::ProjectRect2Image(const Eigen::MatrixXf& pts_3d_rect) {
+  Eigen::MatrixXf pts_3d_homo = Cartesian2Homogenous(pts_3d_rect);
+  Eigen::MatrixXf pts_image = P2_ * pts_3d_homo;
+  pts_image.array().rowwise() /= pts_image.row(2).array();
+  return pts_image.topRows(2);
 }
 
 }  // namespace kitti_utils

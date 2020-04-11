@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 22:36:20
- * @LastEditTime: 2020-04-11 11:36:38
+ * @LastEditTime: 2020-04-11 14:55:23
  * @Description: Some utilities function and classes for loading and parsing KITTI dataset
  * @References: 
  */
@@ -16,6 +16,8 @@
 // PCL
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+
+#include <Eigen/Dense>
 
 typedef pcl::PointXYZI KittiPoint;
 typedef pcl::PointCloud<KittiPoint> KittiPointCloud;
@@ -72,6 +74,18 @@ class Calibration {
 public:
   typedef std::map<std::string, std::vector<float> > FileContentMap;
   Calibration(const std::string& calib_file_path);
+
+  static Eigen::MatrixXf Cartesian2Homogenous(const Eigen::MatrixXf& pts_3d);
+
+  /// 3d to 3d
+  Eigen::MatrixXf ProjectVelo2Ref(const Eigen::MatrixXf& pts_3d_velo);
+  
+  Eigen::MatrixXf ProjectRef2Rect(const Eigen::MatrixXf& pts_3d_ref);
+
+  Eigen::MatrixXf ProjectVelo2Rect(const Eigen::MatrixXf& pts_3d_velo);
+
+  // 3d to 2d
+  Eigen::MatrixXf ProjectRect2Image(const Eigen::MatrixXf& pts_3d_rect);
 
 protected:
   void LoadFile2Map(const std::string& calib_file_path);

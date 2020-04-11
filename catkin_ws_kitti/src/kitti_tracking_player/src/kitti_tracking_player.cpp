@@ -2,7 +2,7 @@
  * @Author: Haiming Zhang
  * @Email: zhanghm_1995@qq.com
  * @Date: 2020-04-09 21:15:44
- * @LastEditTime: 2020-04-11 11:35:52
+ * @LastEditTime: 2020-04-11 11:39:31
  * @Description:
  * @References: 
  */
@@ -1045,8 +1045,6 @@ int main(int argc, char** argv) {
           ROS_ERROR_STREAM("Fail to open " << full_filename_oxts);
           return 0;
         }
-
-        ROS_DEBUG_STREAM("Reading GPS data from oxts file: " << full_filename_oxts);
 
         std::stringstream buffer;
         buffer << t.rdbuf();
